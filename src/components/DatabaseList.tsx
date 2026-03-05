@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Database, SignOut, Warning, CircleNotch } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { useConnection } from '@/contexts/ConnectionContext';
 
 interface DatabaseInfo {
   name: string;
@@ -25,6 +26,7 @@ export function DatabaseList({ username, password, onLogout, onSelectDatabase }:
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const connection = useConnection();
 
   useEffect(() => {
     fetchDatabases();
@@ -33,6 +35,8 @@ export function DatabaseList({ username, password, onLogout, onSelectDatabase }:
   const fetchDatabases = async () => {
     setIsLoading(true);
     setError(null);
+    connection.setStatus('connecting');
+    connection.setOperation('fetching_databases', 'Retrieving database list from server');
 
     try {
       const response = await fetch('https://db.moller12gev.org/api/databases', {
@@ -63,9 +67,14 @@ export function DatabaseList({ username, password, onLogout, onSelectDatabase }:
           { name: 'moller_slow_controls', owner: 'postgres', encoding: 'UTF8' },
         ]);
       }
+      
+      connection.setStatus('connected');
+      connection.setOperation('idle');
+      connection.updateActivity();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect to database server';
       setError(errorMessage);
+      connection.setError(errorMessage);
       toast.error(errorMessage);
       
       setDatabases([
@@ -73,14 +82,25 @@ export function DatabaseList({ username, password, onLogout, onSelectDatabase }:
         { name: 'moller_tracking', owner: 'postgres', encoding: 'UTF8' },
         { name: 'moller_slow_controls', owner: 'postgres', encoding: 'UTF8' },
       ]);
+      
+      connection.setOperation('idle');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
+    connection.setStatus('disconnected');
+    connection.setOperation('idle');
+    connection.setConnectedDatabase(undefined);
     toast.success('Logged out successfully');
     onLogout();
+  };
+
+  const handleSelectDatabase = (dbName: string) => {
+    connection.setConnectedDatabase(dbName);
+    connection.updateActivity();
+    onSelectDatabase(dbName);
   };
 
   return (
@@ -159,7 +179,7 @@ export function DatabaseList({ username, password, onLogout, onSelectDatabase }:
               <Card
                 key={db.name}
                 className="p-6 hover:border-accent/50 hover:shadow-md transition-all cursor-pointer group"
-                onClick={() => onSelectDatabase(db.name)}
+                onClick={() => handleSelectDatabase(db.name)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">

@@ -7,6 +7,8 @@ import { Relationships } from '@/components/Relationships';
 import { Examples } from '@/components/Examples';
 import { AuthLogin } from '@/components/AuthLogin';
 import { DatabaseList } from '@/components/DatabaseList';
+import { StatusBar } from '@/components/StatusBar';
+import { ConnectionProvider } from '@/contexts/ConnectionContext';
 import { mollerSchema, queryExamples } from '@/lib/schema';
 import { Database, Code, Graph, BookOpen, SignOut } from '@phosphor-icons/react';
 import { Toaster } from '@/components/ui/sonner';
@@ -35,25 +37,32 @@ function App() {
   };
 
   if (!credentials) {
-    return <AuthLogin onAuthenticate={handleAuthenticate} />;
+    return (
+      <ConnectionProvider>
+        <AuthLogin onAuthenticate={handleAuthenticate} />
+        <StatusBar />
+      </ConnectionProvider>
+    );
   }
 
   if (!selectedDatabase) {
     return (
-      <>
+      <ConnectionProvider>
         <DatabaseList
           username={credentials.username}
           password={credentials.password}
           onLogout={handleLogout}
           onSelectDatabase={handleSelectDatabase}
         />
+        <StatusBar />
         <Toaster />
-      </>
+      </ConnectionProvider>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <ConnectionProvider>
+      <div className="min-h-screen bg-background pb-12">
       <div
         className="absolute inset-0 -z-10 opacity-30"
         style={{
@@ -138,8 +147,10 @@ function App() {
         </Tabs>
       </main>
 
+      <StatusBar />
       <Toaster />
     </div>
+    </ConnectionProvider>
   );
 }
 
