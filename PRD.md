@@ -1,6 +1,6 @@
 # Planning Guide
 
-A visual SQL schema explorer and query builder for the MOLLER experimental database that helps researchers understand table structures, relationships, and construct valid SQL queries.
+A visual SQL schema explorer and query builder for the MOLLER experimental database that helps researchers authenticate, select databases, understand table structures, relationships, and construct valid SQL queries on db.moller12gev.org.
 
 **Experience Qualities**:
 1. **Scientific** - Clean, data-focused interface that prioritizes clarity and precision for researchers working with experimental physics data.
@@ -8,14 +8,28 @@ A visual SQL schema explorer and query builder for the MOLLER experimental datab
 3. **Efficient** - Streamlines query construction with visual tools and examples, reducing the learning curve for database interaction.
 
 **Complexity Level**: Light Application (multiple features with basic state)
-This is a schema exploration tool with query building capabilities. It presents database schema information, allows table exploration, and helps construct queries - all client-side functionality without complex backend integrations.
+This is a database exploration tool with authentication, database selection, schema browsing, and query building capabilities. It manages user sessions, connects to a remote database server, and provides multiple views of database information - all with moderate state management complexity.
 
 ## Essential Features
+
+### Authentication
+- **Functionality**: Secure login form to authenticate with db.moller12gev.org using username and password
+- **Purpose**: Controls access to the database server and establishes user credentials for queries
+- **Trigger**: User opens the app without stored credentials
+- **Progression**: Enter username → Enter password → Submit credentials → Store session data → Proceed to database selection
+- **Success criteria**: Credentials stored securely in browser session, authentication state persists across page refreshes
+
+### Database Selection
+- **Functionality**: Lists all available databases on db.moller12gev.org after successful authentication
+- **Purpose**: Allows users to choose which database to explore and query
+- **Trigger**: User successfully authenticates
+- **Progression**: View available databases → See database metadata (owner, encoding) → Select database → Navigate to schema explorer
+- **Success criteria**: All available databases displayed with metadata, graceful handling of connection errors, fallback to example databases if server unavailable
 
 ### Schema Browser
 - **Functionality**: Displays all database tables with their columns, data types, and constraints
 - **Purpose**: Provides researchers quick reference to understand the database structure
-- **Trigger**: User opens the app or selects "Browse Schema" tab
+- **Trigger**: User selects a database or clicks "Browse Schema" tab
 - **Progression**: View table list → Select table → See detailed column info with types/constraints → Explore relationships
 - **Success criteria**: All tables visible with complete column metadata, relationships clearly indicated
 
@@ -41,10 +55,14 @@ This is a schema exploration tool with query building capabilities. It presents 
 - **Success criteria**: Queries cover common use cases, include explanatory comments
 
 ## Edge Case Handling
+- **Unauthenticated State**: Display login form on initial load, clear credentials on logout, persist session across page refreshes
+- **Failed Authentication**: Show error message if credentials are rejected, allow retry without page refresh
+- **Connection Failures**: Display warning when database server is unreachable, show example databases as fallback, provide retry button
+- **Empty Database List**: Handle case where no databases are available for the authenticated user with helpful messaging
 - **Empty Schema State**: Display loading skeleton when fetching schema, show friendly message if schema unavailable
 - **Complex Data Types**: Handle array types, JSON columns, and custom PostgreSQL types with clear formatting
 - **Long Table Lists**: Implement search/filter functionality to find tables quickly in large schemas
-- **Mobile View**: Collapse relationship diagram to list view, make query builder vertical stack
+- **Mobile View**: Collapse relationship diagram to list view, make query builder vertical stack, stack navigation buttons
 - **Copy Failures**: Provide fallback manual selection if clipboard API unavailable
 
 ## Design Direction
@@ -81,13 +99,14 @@ Animations should be subtle and functional - reveal information progressively, p
 ## Component Selection
 
 - **Components**:
+  - `Card` for login form, database cards, table details, query preview, example queries
+  - `Input` for username and password fields, with search icon for table filtering
+  - `Button` for login, logout, database selection, actions (copy query, add column, clear selections)
+  - `Label` for form field labels
+  - `Badge` for database metadata (owner, encoding), data types, constraints (PRIMARY KEY, NOT NULL), selected database indicator
   - `Tabs` for main navigation (Schema, Query Builder, Relationships, Examples)
-  - `Card` for table details, query preview, example queries
   - `Table` for displaying schema column information
-  - `ScrollArea` for long lists of tables and columns
-  - `Button` for actions (copy query, add column, clear selections)
-  - `Input` with search icon for table filtering
-  - `Badge` for data types, constraints (PRIMARY KEY, NOT NULL)
+  - `ScrollArea` for long lists of tables, columns, and databases
   - `Separator` to divide sections
   - `Select` for choosing tables in query builder
   - `Checkbox` for selecting columns
@@ -97,37 +116,51 @@ Animations should be subtle and functional - reveal information progressively, p
   - `Sheet` for mobile table detail view
   
 - **Customizations**:
+  - Custom authentication flow with persistent session storage
+  - Custom database list with connection error handling and fallback data
   - Custom syntax-highlighted SQL display component using code blocks
   - Custom relationship diagram using SVG with interactive nodes
   - Custom column type badges with color coding (text=blue, numeric=green, boolean=purple, date=orange)
   
 - **States**:
-  - Buttons: Primary (amber accent) for main actions, ghost for secondary, disabled state when no selection
+  - Login form: Loading state during authentication, error state for failed login
+  - Database cards: Hover with border highlight and shadow, reveal "Explore" button on hover
+  - Buttons: Primary (amber accent) for main actions, ghost for secondary, disabled state when no selection, outline for navigation
   - Table rows: Hover with subtle background change, selected rows with accent border-left
   - Input search: Focus with accent ring, clear button appears when text entered
   - Code blocks: Copy button appears on hover, success checkmark animation on copy
+  - Loading states: Spinner for database list fetch, skeleton for schema loading
   
 - **Icon Selection**:
-  - `Database` for main app icon and table indicators
+  - `Database` for main app icon, table indicators, and database cards
+  - `SignIn` for login button
+  - `SignOut` for logout button
   - `MagnifyingGlass` for search inputs
   - `Code` for query builder tab
   - `Graph` for relationships view
   - `BookOpen` for examples library
   - `Copy` for copy-to-clipboard actions
   - `Check` for successful copy feedback
-  - `Lightning` for quick actions
+  - `Lightning` for quick actions and generate query
   - `ArrowRight` for relationship connections
   - `Columns` for table column indicators
+  - `Warning` for connection error messages
+  - `CircleNotch` for loading/spinner animations
   
 - **Spacing**:
   - Page padding: `p-6 md:p-8`
   - Card padding: `p-4 md:p-6`
+  - Login form: `p-8` for comfortable entry
   - Section gaps: `gap-6`
+  - Database grid: `gap-4`
   - List item gaps: `gap-2`
   - Inline elements: `gap-1.5`
   - Consistent `space-y-4` for vertical stacking
   
 - **Mobile**:
+  - Login form: Full screen with centered card, remains responsive
+  - Database list: Single column grid, full-width cards
+  - Navigation: Stack logout and back buttons vertically if needed
   - Tabs switch to full-width stacked buttons
   - Schema browser shows tables in accordion instead of side-by-side
   - Query builder becomes vertical flow with full-width selects

@@ -1,13 +1,57 @@
+import { useState } from 'react';
+import { useKV } from '@github/spark/hooks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SchemaBrowser } from '@/components/SchemaBrowser';
 import { QueryBuilder } from '@/components/QueryBuilder';
 import { Relationships } from '@/components/Relationships';
 import { Examples } from '@/components/Examples';
+import { AuthLogin } from '@/components/AuthLogin';
+import { DatabaseList } from '@/components/DatabaseList';
 import { mollerSchema, queryExamples } from '@/lib/schema';
-import { Database, Code, Graph, BookOpen } from '@phosphor-icons/react';
+import { Database, Code, Graph, BookOpen, SignOut } from '@phosphor-icons/react';
 import { Toaster } from '@/components/ui/sonner';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 function App() {
+  const [credentials, setCredentials] = useKV<{ username: string; password: string } | null>('moller-db-credentials', null);
+  const [selectedDatabase, setSelectedDatabase] = useState<string | null>(null);
+
+  const handleAuthenticate = async (username: string, password: string) => {
+    setCredentials({ username, password });
+  };
+
+  const handleLogout = () => {
+    setCredentials(null);
+    setSelectedDatabase(null);
+  };
+
+  const handleSelectDatabase = (dbName: string) => {
+    setSelectedDatabase(dbName);
+  };
+
+  const handleBackToDatabases = () => {
+    setSelectedDatabase(null);
+  };
+
+  if (!credentials) {
+    return <AuthLogin onAuthenticate={handleAuthenticate} />;
+  }
+
+  if (!selectedDatabase) {
+    return (
+      <>
+        <DatabaseList
+          username={credentials.username}
+          password={credentials.password}
+          onLogout={handleLogout}
+          onSelectDatabase={handleSelectDatabase}
+        />
+        <Toaster />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div
@@ -25,15 +69,31 @@ function App() {
 
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Database size={40} weight="duotone" className="text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold font-mono tracking-tight">
-                MOLLER Database Explorer
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Schema browser and query builder for the MOLLER experimental database
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Database size={40} weight="duotone" className="text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold font-mono tracking-tight">
+                  MOLLER Database Explorer
+                </h1>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    {credentials.username} • db.moller12gev.org
+                  </p>
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {selectedDatabase}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBackToDatabases} size="sm">
+                ← Databases
+              </Button>
+              <Button variant="outline" onClick={handleLogout} size="sm" className="gap-2">
+                <SignOut size={16} />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
