@@ -98,8 +98,8 @@ Create a new Git repository to hold your Cloud Functions code separately from yo
 
 ```bash
 # Create a new directory for your functions
-mkdir moller-cloud-functions
-cd moller-cloud-functions
+mkdir MOLLER-parity-cloud-functions
+cd MOLLER-parity-cloud-functions
 
 # Initialize Git repository
 git init
@@ -116,7 +116,7 @@ touch README.md
 Your functions repository should follow this structure:
 
 ```
-moller-cloud-functions/
+MOLLER-parity-cloud-functions/
 ├── .gcloudignore           # Files to ignore when deploying
 ├── .gitignore              # Git ignore patterns
 ├── README.md               # Repository documentation
@@ -150,14 +150,14 @@ moller-cloud-functions/
 ### Step 3: Initialize Package.json
 
 ```bash
-cd moller-cloud-functions
+cd MOLLER-parity-cloud-functions
 ```
 
 Create `package.json`:
 
 ```json
 {
-  "name": "moller-cloud-functions",
+  "name": "MOLLER-parity-cloud-functions",
   "version": "1.0.0",
   "description": "Cloud Functions for MOLLER Database Explorer",
   "main": "index.js",
